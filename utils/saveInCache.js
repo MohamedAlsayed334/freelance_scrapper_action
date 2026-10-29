@@ -61,6 +61,8 @@ function saveInCache(projects, cacheFilePath = "cache.json") {
       JSON.stringify(updatedProjects, null, 2),
     );
   }
+
+  return newUniqueProjects;
 }
 
 module.exports = {

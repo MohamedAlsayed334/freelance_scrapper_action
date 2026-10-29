@@ -71,9 +71,9 @@ async function nafezly() {
     projectData = [];
   }
 
-  saveInCache(projectData);
+  const newProjects = saveInCache(projectData);
 
-  return projectData;
+  return { projects: projectData, newProjects };
 }
 
 module.exports = nafezly;
