@@ -1,6 +1,9 @@
 node_modules/
 tmp/
 
+# Local secrets
+.env
+
 # Runtime cache and saved page snapshots
 cache.json
 pageex.html
