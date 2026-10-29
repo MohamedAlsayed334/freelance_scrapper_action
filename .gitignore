@@ -4,6 +4,5 @@ tmp/
 # Local secrets
 .env
 
-# Runtime cache and saved page snapshots
-cache.json
+# Runtime snapshots (cache.json is committed by CI to persist between runs)
 pageex.html
