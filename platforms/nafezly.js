@@ -1,17 +1,18 @@
 const cheerio = require("cheerio");
 const { saveInCache } = require("../utils/saveInCache");
 const { fetchWithRetries } = require("../utils/getpage");
+const { parseRelativeTime } = require("../utils/parseRelativeTime");
 
 const BASE_URLS = [
   "https://nafezly.com/projects?specialize=development&page=1",
 ];
 
-const REQUEST_HEADERS = {
-  "User-Agent":
-    "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/96.0.4664.110 Safari/537.36",
-};
+function extractMeta(card, iconSelector) {
+  const icon = card.find(iconSelector).first();
+  return icon.length ? icon.parent().text().trim() : "";
+}
 
-function extractProjects(html) {
+function extractProjects(html, scrapedAt = Date.now()) {
   const $ = cheerio.load(html);
   const projects = [];
 
@@ -19,7 +20,6 @@ function extractProjects(html) {
     const card = $(element);
     const linkEl = card.find("a.text-truncate").first();
     const titleEl = card.find("h3").first();
-    const budgetEl = card.find(".fa-usd-circle").first();
     const title = linkEl.length
       ? linkEl.text().trim()
       : titleEl.length
@@ -29,13 +29,21 @@ function extractProjects(html) {
     const description = titleEl.length
       ? titleEl.text().trim()
       : card.find("h3").first().text().trim();
-    const budget = budgetEl.length ? budgetEl.text().trim() : "";
     const link = linkEl.length ? linkEl.attr("href") : "";
+
+    const budget = extractMeta(card, ".fa-usd-circle");
+    const duration = extractMeta(card, ".fa-business-time");
+    const postedAt = extractMeta(card, ".fa-clock");
+    const postedAtTimestamp = parseRelativeTime(postedAt, scrapedAt);
 
     projects.push({
       title,
       description,
       budget,
+      duration,
+      postedAt,
+      postedAtTimestamp,
+      scrapedAt,
       link: link ? `https://nafezly.com${link}` : undefined,
     });
   });
@@ -44,7 +52,7 @@ function extractProjects(html) {
 }
 
 async function fetchPage(url) {
-  const html = await fetchWithRetries(url, { headers: REQUEST_HEADERS });
+  const html = await fetchWithRetries(url);
   const text = await html.text();
   return extractProjects(text);
 }
