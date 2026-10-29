@@ -1,6 +1,6 @@
 const cheerio = require("cheerio");
 const { saveInCache } = require("../utils/saveInCache");
-const { fetchWithRetries } = require("../utils/getpage");
+const { getPage } = require("../utils/getpage");
 const { parseRelativeTime } = require("../utils/parseRelativeTime");
 
 const BASE_URLS = [
@@ -57,7 +57,7 @@ function extractProjects(html, scrapedAt = Date.now()) {
 }
 
 async function fetchPage(url) {
-  const html = await fetchWithRetries(url);
+  const html = await getPage(url);
   const text = await html.text();
   return extractProjects(text);
 }
