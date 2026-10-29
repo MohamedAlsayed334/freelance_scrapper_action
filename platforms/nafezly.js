@@ -30,6 +30,11 @@ function extractProjects(html, scrapedAt = Date.now()) {
       ? titleEl.text().trim()
       : card.find("h3").first().text().trim();
     const link = linkEl.length ? linkEl.attr("href") : "";
+    const absoluteLink = link
+      ? link.startsWith("http")
+        ? link
+        : `https://nafezly.com${link.startsWith("/") ? "" : "/"}${link}`
+      : undefined;
 
     const budget = extractMeta(card, ".fa-usd-circle");
     const duration = extractMeta(card, ".fa-business-time");
@@ -44,7 +49,7 @@ function extractProjects(html, scrapedAt = Date.now()) {
       postedAt,
       postedAtTimestamp,
       scrapedAt,
-      link: link ? `https://nafezly.com${link}` : undefined,
+      link: absoluteLink,
     });
   });
 
