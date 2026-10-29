@@ -1,0 +1,6 @@
+node_modules/
+tmp/
+
+# Runtime cache and saved page snapshots
+cache.json
+pageex.html
