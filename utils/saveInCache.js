@@ -1,31 +1,61 @@
 const fs = require("fs");
 
-function compareProjects(newProjects, cacheFilePath) {
-  let cachedProjects = [];
-  if (fs.existsSync(cacheFilePath)) {
-    const cacheData = fs.readFileSync(cacheFilePath, "utf-8");
-    cachedProjects = JSON.parse(cacheData);
-  }
+const CACHE_TTL_MS = 2 * 24 * 60 * 60 * 1000; // 2 days
 
-  const newUniqueProjects = newProjects.filter(
+function toTimestamp(value) {
+  if (typeof value === "number" && Number.isFinite(value)) return value;
+  if (typeof value === "string" && value) {
+    const parsed = Date.parse(value);
+    if (!Number.isNaN(parsed)) return parsed;
+  }
+  return null;
+}
+
+function isExpired(project, now = Date.now()) {
+  const timestamps = [
+    toTimestamp(project.scrapedAt),
+    toTimestamp(project.postedAtTimestamp),
+  ].filter((timestamp) => timestamp !== null);
+
+  return timestamps.some((timestamp) => now - timestamp > CACHE_TTL_MS);
+}
+
+function readCache(cacheFilePath) {
+  if (!fs.existsSync(cacheFilePath)) return [];
+  const cachedProjects = JSON.parse(fs.readFileSync(cacheFilePath, "utf-8"));
+  return Array.isArray(cachedProjects) ? cachedProjects : [];
+}
+
+function saveInCache(projects, cacheFilePath = "cache.json") {
+  const cachedProjects = readCache(cacheFilePath);
+  const now = Date.now();
+
+  const activeProjects = cachedProjects.filter(
+    (project) => !isExpired(project, now),
+  );
+
+  const newUniqueProjects = projects.filter(
     (newProject) =>
-      !cachedProjects.some(
+      !activeProjects.some(
         (cachedProject) =>
           cachedProject.title === newProject.title &&
           cachedProject.description === newProject.description,
       ),
   );
 
-  if (newUniqueProjects.length > 0) {
-    cachedProjects.push(...newUniqueProjects);
-    fs.writeFileSync(cacheFilePath, JSON.stringify(cachedProjects, null, 2));
+  const updatedProjects = [...activeProjects, ...newUniqueProjects];
+
+  const removedExpired = activeProjects.length !== cachedProjects.length;
+  if (newUniqueProjects.length > 0 || removedExpired) {
+    fs.writeFileSync(
+      cacheFilePath,
+      JSON.stringify(updatedProjects, null, 2),
+    );
   }
-}
-function saveInCache(projects) {
-  const cacheFilePath = "cache.json";
-  return compareProjects(projects, cacheFilePath);
 }
 
 module.exports = {
   saveInCache,
+  isExpired,
+  CACHE_TTL_MS,
 };
