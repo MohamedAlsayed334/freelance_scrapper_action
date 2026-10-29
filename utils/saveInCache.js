@@ -22,8 +22,17 @@ function isExpired(project, now = Date.now()) {
 
 function readCache(cacheFilePath) {
   if (!fs.existsSync(cacheFilePath)) return [];
-  const cachedProjects = JSON.parse(fs.readFileSync(cacheFilePath, "utf-8"));
-  return Array.isArray(cachedProjects) ? cachedProjects : [];
+
+  const raw = fs.readFileSync(cacheFilePath, "utf-8").trim();
+  if (!raw) return [];
+
+  try {
+    const cachedProjects = JSON.parse(raw);
+    return Array.isArray(cachedProjects) ? cachedProjects : [];
+  } catch (error) {
+    console.error(`Failed to read cache ${cacheFilePath}:`, error.message);
+    return [];
+  }
 }
 
 function saveInCache(projects, cacheFilePath = "cache.json") {
