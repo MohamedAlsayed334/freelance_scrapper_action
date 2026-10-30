@@ -5,7 +5,8 @@ const { sendNewProjects } = require("./utils/telegram");
 loadEnv();
 
 async function main() {
-  const { newProjects } = await nafezly();
+  const { projects, newProjects } = await nafezly();
+  console.log(`Scraped ${projects.length} projects`);
   console.log(`New projects: ${newProjects.length}`);
 
   const result = await sendNewProjects(newProjects);
@@ -19,7 +20,11 @@ async function main() {
   }
 }
 
-main().catch((error) => {
-  console.error("Scraping failed:", error.message);
-  process.exitCode = 1;
-});
+if (require.main === module) {
+  main().catch((error) => {
+    console.error("Scraping failed:", error.message);
+    process.exitCode = 1;
+  });
+}
+
+module.exports = { main };
