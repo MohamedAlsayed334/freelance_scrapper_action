@@ -1,8 +1,23 @@
-name: Scrape freelance projects
+# ---------------------------------------------------------------------------
+# DISABLED — kept for reference only.
+#
+# nafezly.com is behind Cloudflare, which answers GitHub-hosted runners with
+# HTTP 403 ("Just a moment..."). Requests from Actions never reach the page,
+# so every run scraped 0 projects. GitHub's `schedule` event is also
+# best-effort (delayed or dropped under load), so it is the wrong scheduler
+# for a 10-minute cadence.
+#
+# The scraper now runs 24/7 on Botkeep. See README.md for the deployment.
+#
+# The `schedule` trigger is commented out so nothing runs automatically.
+# `workflow_dispatch` stays enabled only so the job can be retried manually
+# (for example from a self-hosted runner on a non-datacenter IP).
+# ---------------------------------------------------------------------------
+name: Scrape freelance projects (disabled - Cloudflare blocks runners)
 
 on:
-  schedule:
-    - cron: "0 * * * *"
+  # schedule:
+  #   - cron: "0 * * * *"
   workflow_dispatch:
 
 permissions:
@@ -14,6 +29,7 @@ concurrency:
 
 jobs:
   scrape:
+    # A self-hosted runner would run from your own IP and pass Cloudflare.
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
@@ -29,6 +45,7 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      # One-shot run: the long-running scheduler is for hosts like Botkeep.
       - name: Scrape and send Telegram notifications
         env:
           TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
