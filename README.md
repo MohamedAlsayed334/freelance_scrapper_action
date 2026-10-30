@@ -16,7 +16,7 @@ fetch page → parse cards → dedupe against cache.json → send new jobs to Te
 | --- | --- | --- |
 | Fetch | `utils/getpage.js` | `fetch` with a Chrome User-Agent, 10s timeout, 3 retries. Non-2xx responses throw. |
 | Parse | `platforms/nafezly.js` | cheerio reads every `.project-box` and extracts title, description, budget, duration, posted text, absolute link. |
-| Dedupe | `utils/saveInCache.js` | Compares against `cache.json` by title + description, drops entries older than **2 days**, returns only genuinely new projects. |
+| Dedupe | `utils/saveInCache.js` | Compares against **every** cached job by title + description, drops entries older than **2 days**, returns only genuinely new projects. Expired jobs that are still listed stay cached until they leave the page, so a bumped old job is never re-sent. |
 | Notify | `utils/telegram.js` | Sends one HTML message per job (blockquote formatting, escaped values, retry on rate limits). |
 | Orchestrate | `index.js` | Runs the four steps above. `npm run start:once` = one pass. |
 | Schedule | `scripts/scheduler.js` | Runs `index.js` immediately, then every `SCRAPE_INTERVAL_MS` (default 10 minutes) without overlapping runs. |

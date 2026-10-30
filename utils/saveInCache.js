@@ -17,7 +17,16 @@ function isExpired(project, now = Date.now()) {
     toTimestamp(project.postedAtTimestamp),
   ].filter((timestamp) => timestamp !== null);
 
+  // Nothing to measure, so freshness cannot be proven: let it expire.
+  if (timestamps.length === 0) return true;
+
+  // Expired when ANY timestamp is older than the TTL, i.e. an entry is only
+  // kept while both its scrape time and its posting time are inside the window.
   return timestamps.some((timestamp) => now - timestamp > CACHE_TTL_MS);
+}
+
+function isSameProject(a, b) {
+  return a.title === b.title && a.description === b.description;
 }
 
 function readCache(cacheFilePath) {
@@ -43,19 +52,34 @@ function saveInCache(projects, cacheFilePath = "cache.json") {
     (project) => !isExpired(project, now),
   );
 
+  // Compare against every known project, not only the ones still inside the
+  // TTL window: an old job that is still listed must not look brand new.
   const newUniqueProjects = projects.filter(
     (newProject) =>
-      !activeProjects.some(
-        (cachedProject) =>
-          cachedProject.title === newProject.title &&
-          cachedProject.description === newProject.description,
+      !cachedProjects.some((cachedProject) =>
+        isSameProject(cachedProject, newProject),
       ),
   );
 
-  const updatedProjects = [...activeProjects, ...newUniqueProjects];
+  // Expired jobs that are still on the page stay cached. Dropping them would
+  // make the next run treat them as new again and resend them every tick.
+  const stillListedProjects = cachedProjects.filter(
+    (cachedProject) =>
+      isExpired(cachedProject, now) &&
+      projects.some((project) => isSameProject(cachedProject, project)),
+  );
 
-  const removedExpired = activeProjects.length !== cachedProjects.length;
-  if (newUniqueProjects.length > 0 || removedExpired) {
+  const updatedProjects = [
+    ...activeProjects,
+    ...stillListedProjects,
+    ...newUniqueProjects,
+  ];
+
+  const changed =
+    newUniqueProjects.length > 0 ||
+    updatedProjects.length !== cachedProjects.length;
+
+  if (changed) {
     fs.writeFileSync(
       cacheFilePath,
       JSON.stringify(updatedProjects, null, 2),
