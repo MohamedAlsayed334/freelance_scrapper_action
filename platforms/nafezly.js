@@ -58,8 +58,7 @@ function extractProjects(html, scrapedAt = Date.now()) {
 
 async function fetchPage(url) {
   const html = await getPage(url);
-  const text = await html.text();
-  return extractProjects(text);
+  return extractProjects(html);
 }
 
 async function nafezly() {
